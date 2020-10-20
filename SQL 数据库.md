@@ -80,7 +80,15 @@ create table <表名>
 ```
 
 - 半角英文字母、数字、下划线（_）作为数据库、表和列的名称
+
 - 在数据库中不能创建两个相同名称的表，在同一个表中也不能创建两个名称相同的列
+
+- 设置默认值，通过*default*关键字
+
+  ```mysql
+  create table 表名
+  (列1 数据类型 default xxx)
+  ```
 
 #### 数据类型
 
@@ -137,22 +145,114 @@ drop table 表名;
 
 #### 插入数据
 
-```mysql
-insert into 表名 values(xxx,xxxx);
+- **格式**
 
-START TRANSACTION;
-INSERT INTO Shohin VALUES ('0001', 'T恤' ,'衣服', 1000, 500, '2009-09-20');
-INSERT INTO Shohin VALUES ('0002', '打孔器', '办公用品', 500, 320, '2009-09-11');
-COMMIT;
-```
+  ```insert into 表名 (列名1,列名2,列名3,...) values(值1,值2,值3,...);```
+
+  ![image-20201020150636017](./images/image-20201020150636017.png)
+
+  ![image-20201020150711365](./images/image-20201020150711365.png)
+
+  ```mysql
+  insert into 表名 values(xxx,xxxx);
+  
+  START TRANSACTION;
+  INSERT INTO Shohin VALUES ('0001', 'T恤' ,'衣服', 1000, 500, '2009-09-20');
+  INSERT INTO Shohin VALUES ('0002', '打孔器', '办公用品', 500, 320, '2009-09-11');
+  COMMIT;
+  ```
+
+- **列清单的省略**
+
+  省略表名后的列清单，values子句的值会默认按照从左到右的顺序赋予给每一列
+
+- **插入默认值**
+
+  <u>省略INSERT语句中的列名，就会自动设定为该列的默认值（没有默认值时会设定</u>
+  <u>为NULL）。</u>
+
+  前提：创建表时，```default```关键字约束设定默认值
+
+  1. 显式方式插入设定默认值
+
+     ```mysql
+     INSERT INTO ProductIns (product_id, product_name, product_type, sale_price, purchase_price, regist_date) VALUES ('0007', '擦菜板', '厨房用具', DEFAULT, 790, '2009-04-28');
+     ```
+
+  2. 隐式方法插入设定默认值
+
+     ![image-20201020151834333](./images/image-20201020151834333.png)
+
+     <u>如果省略了没有设定默认值的列，该列的值将会被设定为NULL</u>
+
+- **从其他表中复制数据**
+
+  *insert ... select*  (注意无values)
+
+  insert语句的select语句中，可以使用where子句活group by子句等任何SQL语法（但是使用order by子句不会产生任何效果）
+
+  ![image-20201020152501318](./images/image-20201020152501318.png)
+
+  ```mysql
+  INSERT INTO ProductType (product_type, sum_sale_price,sum_purchase_price) SELECT product_type, SUM(sale_price), SUM(purchase_price) FROM Product GROUP BY product_type;
+  ```
 
 #### 数据删除
 
+- **drop和delete的区别**
 
+  - **drop table将表完全删除**
+  - **delete 语句留下表，删除表中的全部数据**
+
+- **delete**
+
+  1. ```delete from 表名```
+
+  2. 指定删除对象进行删除
+
+     ```mysql
+     delete from 表名 where 条件;
+     ```
+
+  3. 
+
+  delete 语句的删除对象并不是表或者列，而是记录（行）
+
+  delete 语句不能使用group by、having、order by三类语句，只能使用where子句
+
+- **drop**
+
+- **truncate**
+
+  删除表中全部数据
+
+  ```mysql
+  truncate 表名；
+  ```
+
+- 
 
 #### 数据更新
 
+- **update**
 
+  1. ```update 表名 set 列名=表达式;```
+
+  2. 指定条件的update语句
+
+     ```mysql 
+     update 表名
+     set 列名=表达式
+     where 条件;
+     ```
+
+  3. 
+
+  4. 
+
+- 
+
+- 
 
 # 3. 查询基础
 
@@ -288,9 +388,9 @@ select product_name, sale_price,sale_price*2 as 'sale_price_x2' from product;
 
 - <u>NULL的判断不通过比较运算符 通过 ```is null```和```is not null```进行数据的选中，提取</u>；如果通过比较运算符进行NULL判断，则不会取出含NULL的数据
 
-  判断是否是NULL的```is null```运算符
+  判断是否是NULL的运算符：```is null```
 
-  判断不是NULL的运算符，```is not null```
+  判断不是NULL的运算符：```is not null```
 
   ```mysql
   select * from Product where purchase_price is null;
