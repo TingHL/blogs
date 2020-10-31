@@ -52,7 +52,7 @@ class UserFactory{
 
 
 
-# 2.2 IOC接口（BeanFactory）
+# 2.2 IOC接口（BeanFactory ApplicationContext）
 
 1. IOC思想基于IOC容器完成，IOC容器底层就是对象工厂
 
@@ -808,13 +808,369 @@ Spring里面有两种类型的bean，一种普通bean，另外一种工厂bean�
 
 
 
-步骤二：
+步骤二：开启组件扫描
 
-步骤三：
+- 引入context名称空间
+
+- 开启组件扫描
+
+  ![image-20201031115247131](./images/image-20201031115247131.png)
+
+  ```xml
+  <?xml version="1.0" encoding="UTF-8"?>
+  <beans xmlns="http://www.springframework.org/schema/beans"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns:context="http://www.springframework.org/schema/context"
+         xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+                             http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+  <!--开启组件扫扫描-->
+  <!--    base-package 指定扫描哪一个指定的包-->
+  <!--    1. 如果扫描多个包，多个包使用逗号隔开-->
+      <context:component-scan base-package="com.atguigu.spring5.testdemo.dao,com.atguigu.spring5.testdemo.service"></context:component-scan>
+  <!--    2. 如果扫描多个包，扫描包的上层目录-->
+      <context:component-scan base-package="com.atguigu"></context:component-scan>
+  </beans>
+  ```
+
+步骤三：创建类，在类上面添加创建对象注解
+
+```java
+//在注解里面value属性值可以省略不写  默认值是类名称，首字母小写  创建id为userService的单实例
+@Component(value="userService")  //<bean id="userService" class=""/> 等价
+public class UserService {
+
+    public void add(){
+        System.out.println("service add ......");
+    }
+}
+```
+
+```java
+//测试
+@Test
+public void testService(){
+    ApplicationContext context=new ClassPathXmlApplicationContext("bean1.xml");
+    UserService userService=context.getBean("userService",UserService.class);
+    userService.add();
+}
+```
+
+### 2.3.3.4 开启组件扫描细节配置
+
+示例一：
+
+```xml
+<!--
+use-default-filter="false"：不使用默认filter 自己配置filter
+context:include-filter：设置扫描哪些内容 type="annotation" (annotation注解) expresssion="xxx.Controller" 扫描controller注解修饰的类
+-->
+    <context:component-scan base-package="com.atguigu" use-default-filters="false">
+        <context:include-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+    </context:component-scan>
+```
+
+示例二：
+
+```xml
+<!--
+use-default-filter="false"：不使用默认filter 自己配置filter 
+context:exclude-filter：设置不扫描哪些内容 type="annotation" (annotation注解) expresssion="xxx.Controller" 不扫描controller注解修饰的类
+-->
+<context:component-scan base-package="com.atguigu" use-default-filters="false">
+        <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+    </context:component-scan>
+```
+
+### 2.3.3.5 基于注解方式实现属性注入
+
+三种常用注解：
+
+1. @AutoWired：根据属性类型进行自动装配，注入
+2. @Qualifier：根据属性名称进行注入，和@AutoWired一起进行使用
+3. @Resource：可以根据类型注入，也可以根据名称注入
+4. @Value：注入普通类型属性
+
+#### @AutoWired：根据属性类型进行自动装配，注入示例
+
+步骤一：把service和dao对象创建，在service和dao类添加对象注解
+
+```java
+@Repository
+public class UserDaoImpl implements UserDao{
+    @Override
+    public void add() {
+        System.out.println("dao add ...");
+    }
+}
+```
+
+步骤二： 在service注入dao对象，在service类和dao类型属性，在属性上面使用注解
+
+```java
+//在注解里面value属性值可以省略不写  默认值是类名称，首字母小写  创建id为userService的单实例
+@Component(value="userService")  //<bean id="userService" class=""/> 等价
+public class UserService {
+//    定义dao类型属性 不需要set方法 添加注入属性注解
+    @Autowired  //根据类型进行注入
+    private UserDao userDao;
+    
+    public void add(){
+        System.out.println("service add ......");
+        userDao.add();
+    }
+}
+```
+
+#### @Qualifier：根据属性名称进行注入示例
+
+必须与@AutoWired一起使用
+
+```java
+@Repository(value = "userDaoImpl")
+public class UserDaoImpl implements UserDao{
+    @Override
+    public void add() {
+        System.out.println("dao add ...");
+    }
+}
+```
+
+```java
+@Component(value="userService")  //<bean id="userService" class=""/> 等价
+public class UserService {
+//    定义dao类型属性 不需要set方法 添加注入属性注解
+    @Autowired
+    @Qualifier(value = "userDaoImpl")
+    private UserDao userDao;
+
+    public void add(){
+        System.out.println("service add ......");
+        userDao.add();
+    }
+}
+```
+
+#### @Resource：可以根据类型注入，也可以根据名称注入示例
+
+来自javax.annotaion.Resource 拓展包中
+
+```java
+@Resource  //根据类型进行注入
+private UserDao userDao;
+
+@Resource(name = "userDaoImpl") //依据名称进行注入
+private UserDao userDao;
+```
+
+#### @Value：注入普通类型属性示例
+
+```java
+@Value(value = "abc") //@注入属性值
+private String nname;
+```
+
+### 2.3.3.6 完全注解开发
+
+1. 创建配置类，代替XML配置文件
+
+   ```java
+   @Configuration //将当前类作为配置类，代替XML配置文件
+   @ComponentScan(basePackages = {"com.atguigu"})  //注解表示扫描的位置包部分
+   public class SpringConfig {
+   }
+   ```
+
+2. 编写测试类
+
+   ```java
+   @Test
+   public void testService(){
+   //        加载配置类
+   	ApplicationContext context=new 	AnnotationConfigApplicationContext(SpringConfig.class);
+   	UserService userService=context.getBean("userService",UserService.class);
+   userService.add();
+   }
+   ```
 
 # 三、AOP
 
-AOP：面向切面，不改源代码进行功能增强
+# 3.1 AOP概念
+
+- AOP：面向切面编程，不改源代码进行功能增强。利用AOP可以对业务逻辑的各个部分进行隔离，从而使得业务逻辑各部分之间的耦合度降低，提高程序的可用性，提高开发效率。
+- 通俗描述：不通过修改源代码方式，在主干功能里面添加新功能
+- 使用登录的例子进行说明
+
+![image-20201031201601261](./images/image-20201031201601261.png)
+
+# 3.2 AOP底层原理
+
+## 3.2.1 AOP底层使用动态代理
+
+1. 有两种情况的动态代理
+
+   - 第一种情况：**有接口的情况 使用JDK动态代理**
+
+     创建**接口实现类的代理对象**，通过代理对象增强类的方法（增加新的功能）
+
+     ![image-20201031202508450](./images/image-20201031202508450.png)
+
+   - 第二种情况：**没有接口的情况 使用CGLIB动态代理**
+
+     创建**子类的代理对象**，增强类的方法
+
+     
+
+     ![image-20201031203004643](./images/image-20201031203004643.png)
+
+   - 
+
+## 3.2.2 AOP (JDK动态代理)
+
+### 3.2.2.1 JDK动态代理简介
+
+**使用JDK动态代理，使用Proxy类里面的方法，创建代理对象**，调用newProxyInstance方法实现，三个参数：
+
+- ClassLoader loader，类加载器
+- Class<?> interfaces，增强方法所在的类，这个类实现的接口，支持多个接口
+- InvovationHandler，实现这个接口InvocationHandler，创建代理的对象，写增强的方法
+
+![image-20201031205625511](./images/image-20201031205625511.png)
+
+![image-20201031215611838](./images/image-20201031215611838.png)
+
+### 3.2.2.2 编写JDK动态代理代码
+
+1. **创建接口，定义方法**
+
+   ```java
+   public interface UserDao {
+       public int add(int a,int b);
+       public String update(String id);
+   }
+   ```
+
+2. **创建接口的实现类，实现方法**
+
+   ```java
+   public class UserDaoImpl implements UserDao{
+       @Override
+       public int add(int a, int b) {
+           return a+b;
+       }
+   
+       @Override
+       public String update(String id) {
+           return id;
+       }
+   }
+   ```
+
+3. 使用Proxy类创建接口代理对象
+
+   ```java
+   import java.lang.reflect.InvocationHandler;
+   import java.lang.reflect.Method;
+   import java.lang.reflect.Proxy;
+   import java.util.Arrays;
+   
+   public class JDKProxy {
+   
+       public static void main(String[] args) {
+           //创建要实现方法增强的接口类
+           Class[] interfaces={UserDao.class};
+           UserDaoImpl userDaoImpl=new UserDaoImpl();
+           //接口等于实现类的代理对象  Proxy.newProxyInstance创建接口实现类的代理对象
+           UserDao dao =(UserDao)Proxy.newProxyInstance(JDKProxy.class.getClassLoader(),interfaces,new UserDaoProxy(userDaoImpl));
+           int result=dao.add(1,2);
+           System.out.println(result);
+           dao.update("1234556Strings");
+       }
+   
+   }
+   
+   //创建代理对象代码 里面写一些增强逻辑
+   class UserDaoProxy implements InvocationHandler {
+       //1. 把被代理对象传递进来
+       public Object obj;
+   
+       //通过有参构造进行传递
+       public UserDaoProxy(Object obj){
+           this.obj=obj;
+       }
+   
+       //增强的逻辑
+       @Override
+       public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+           //增强方法之前
+           //method.getName() 获得执行方法的名字
+           System.out.println("方法之前执行："+method.getName()+"传递的参数:"+ Arrays.toString(args));
+   
+           if(method.getName()=="add"){
+               //执行类原有方法
+               Object res=method.invoke(obj,args);
+               //增强方法之后
+               System.out.println("方法之后执行："+obj);
+               return res;
+           }else{
+               //执行类原有方法
+               Object res=method.invoke(obj,args);
+               //方法执行
+               System.out.println("方法执行之后："+obj);
+               return null;
+           }
+       }
+   }
+   ```
+
+# 3.3 AOP（术语）
+
+## 3.3.1 连接点
+
+类中哪些方法可以被增强，这些方法被称为连接点
+
+## 3.3.2 切入点
+
+实际被真正被增强的方法，称为切入点 
+
+## 3.3.3 通知（增强）
+
+1. 实际增强的逻辑部分被称为通知（增强）
+2. 通知有多种类型（五种类型）：
+   - 前置通知
+   - 后置通知
+   - 环绕通知
+   - 异常通知
+   - 最终通知
+
+## 3.3.4 切面
+
+是一个动作上的操作，把通知应用到切入点的过程
+
+# 3.4 AOP操作（准备工作）
+
+**Spring框架中一般基于AspectJ实现AOP操作**
+
+## 3.4.1 AspectJ
+
+不是Spring组成部分，独立AOP框架，一般把AspectJ和Spring框架一起使用，进行AOP操作
+
+## 3.4.2 基于AspectJ实现AOP操作
+
+### 3.4.2.1 基于XML配置文件实现
+
+
+
+### 3.4.2.2 基于注解方式实现
+
+
+
+## 3.4.3 在项目工程里面引入AOP相关依赖
+
+![image-20201031233728197](./images/image-20201031233728197.png)
+
+# 3.5 
+
+# 3.6 
 
 # 四、JdbcTemplate
 
