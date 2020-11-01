@@ -1004,6 +1004,8 @@ private String nname;
 
 # 3.2 AOP底层原理
 
+先介绍底层原理如何实现，在介绍使用注解封装之后的简单的使用方法3.5小节AOP操作（AspectJ注解）
+
 ## 3.2.1 AOP底层使用动态代理
 
 1. 有两种情况的动态代理
@@ -1158,19 +1160,258 @@ private String nname;
 
 ### 3.4.2.1 基于XML配置文件实现
 
-
-
 ### 3.4.2.2 基于注解方式实现
-
-
 
 ## 3.4.3 在项目工程里面引入AOP相关依赖
 
 ![image-20201031233728197](./images/image-20201031233728197.png)
 
-# 3.5 
+## 3.4.4 切入点表达式
 
-# 3.6 
+### 3.4.4.1 切入点表达式作用
+
+知道对哪个类里面的那个方法进行增强
+
+### 3.4.4.3 语法结构
+
+```java
+execution([权限修饰符][返回类型][类全路径][方法名称]([参数列表]))
+```
+
+举例1：对com.atguigu.dao.BookDao类里面的add方法进行增强
+
+```java
+execution(* com.atguigu.dao.BookDao.add(..))
+//* 表示任意修饰符
+//..表示方法中的参数
+```
+
+举例2：对com.atguigu.dao.BookDao类里面的所有方法进行增强
+
+```java
+execution(* com.atguigu.dao.BookDao.*(..))
+```
+
+举例3：对com.atguigu.dao包里面所有类，所有类里的所有方法进行增强
+
+```java
+execution(* com.atguigu.dao.*.*(..))
+```
+
+# 3.5 AOP操作（AspectJ注解）
+
+## 3.5.1 创建类，在类里面定义方法（被增强）
+
+```java
+public class User {
+
+    //    前置通知
+    public void add(){
+        System.out.println("add ...");
+    }
+}
+```
+
+## 3.5.2 创建增强类（编写增强逻辑）
+
+ 在增强类里面，创建方法，让不同方法代表不同通知类型
+
+```java
+public class UserProxy {
+    public void before(){
+        System.out.println("before...");
+    }
+}
+```
+
+## 3.5.3 进行通知配置
+
+- 步骤一：在Spring配置文件中，开启注解扫描
+
+  ![image-20201101142301469](./images/image-20201101142301469.png)
+
+- 步骤二：使用注解创建User和UserProxy对象
+
+  ![image-20201101142356431](./images/image-20201101142356431.png)
+
+  ![image-20201101142334607](./images/image-20201101142334607.png)
+
+- 步骤三：在增强类上面添加注解@Aspect
+
+  ![image-20201101142718156](./images/image-20201101142718156.png)
+
+- 步骤四：在Spring配置文件中，开启生成代理对象
+
+  ```xml
+  <!--    开启AspectJ生成代理对象-->
+  <aop:aspectj-autoproxy></aop:aspectj-autoproxy>
+  ```
+
+
+## 3.5.4 配置不同类型的通知
+
+在增强类的里面，在作为通知方法上面添加通知类型注解，使用切入点表达式配置
+
+`@Before @After @AfterReturning @AfterThrowing @Around`
+
+```java
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.*;
+import org.springframework.stereotype.Component;
+
+//增强类
+@Component
+@Aspect  //生成代理对象
+public class UserProxy {
+
+    //前置通知
+    //@Before 注解表示作为前置通知  切入点表达式execution([权限修饰符][返回类型][类全路径][方法名称]([参数列表]))
+    @Before(value = "execution(* com.atguigu.spring5.aopanno.User.add(..))")
+    public void before(){
+        System.out.println("before...");
+    }
+
+    //最终通知
+    //在方法执行之后执行 方法被调用的时候就会执行 不管调用之后方法有没出错
+    @After(value = "execution(* com.atguigu.spring5.aopanno.User.add(..))")
+    public void after(){
+        System.out.println("after...");
+    }
+
+    
+    //在返回结果（值）之后执行
+    @AfterReturning(value = "execution(* com.atguigu.spring5.aopanno.User.add(..))")
+    public void afterReturning(){
+        System.out.println("afterReturning...");
+    }
+
+    //异常通知
+    @AfterThrowing(value = "execution(* com.atguigu.spring5.aopanno.User.add(..))")
+    public void afterThrowing(){
+        System.out.println("afterThrowing...");
+    }
+
+    //在方法执行之前、之后都执行 环绕通知
+    @Around(value = "execution(* com.atguigu.spring5.aopanno.User.add(..))")
+    public void around(ProceedingJoinPoint proceedingJoinPoint) throws Throwable {
+        System.out.println("环绕之前...");
+		
+        //被增强方法执行
+        proceedingJoinPoint.proceed();
+        System.out.println("环绕之后");
+    }
+}
+```
+
+## 3.5.5 相同的切入点抽取
+
+使用`@Pointcut(value="execution([权限修饰符][返回类型][类全路径][方法名称]([参数列表]))")`
+
+```java
+public class UserProxy {
+    //相同的切入点抽取
+    @Pointcut(value = "execution(* com.atguigu.spring5.aopanno.User.add(..))")
+    public void pointdemo(){
+    }
+
+    //前置通知
+    //@Before 注解表示作为前置通知  切入点表达式execution([权限修饰符][返回类型][类全路径][方法名称]([参数列表]))
+    @Before(value = "pointdemo()")
+    public void before(){
+        System.out.println("before...");
+    }
+
+    //最终通知
+    //在方法执行之后执行 方法被调用的时候就会执行 不管调用之后方法有没出错
+    @After(value = "pointdemo()")
+    public void after(){
+        System.out.println("after...");
+    }
+```
+
+## 3.5.6 有多个增强类对同一个方法进行增强，设置增强类的优先级
+
+1. 在增强类上面增加注解`@Order(数字类型的值)`，数字类型的值越小优先级越高，0、1、2、......
+
+   ```java
+   //增强类
+   @Component
+   @Aspect  //生成代理对象
+   @Order(3)  //代理对象优先级
+   public class UserProxy {
+       //todo
+   }
+   ```
+
+## 3.5.7 完全使用注解开发
+
+1. 创建配置类，不需要配置XML配置文件
+
+   ```java
+   @Configuration     //配置类
+   @ComponentScan(basePackages = {"com.atguigu"})    //开启组件扫描
+   @EnableAspectJAutoProxy(proxyTargetClass = true)  //开启AspectJ 代理对象
+   public class ConfigAop {
+   }
+   ```
+
+2. 
+
+# 3.6 AOP操作（AspectJ配置文件）
+
+## 3.6.1 创建两个类，增强类和被增强类，创建方法
+
+```java
+public class Book {
+    public void buy(){
+        System.out.println("buy...");
+    }
+}
+```
+
+```java
+public class BookProxy {
+
+    public void before(){
+        System.out.println("before....");
+    }
+}
+```
+
+## 3.6.2 在Spring配置文件中创建两个类对象
+
+```xml
+<!--创建两个类的对象-->
+    <bean id="book" class="com.atguigu.spring5.aopxml.Book"></bean>
+    <bean id="bookProxy" class="com.atguigu.spring5.aopxml.BookProxy"></bean>
+```
+
+## 3.6.3 在Spring配置文件中配置切入点
+
+```xml
+<!--配置aop的增强-->
+    <aop:config>
+    <!-- 步骤一：配置切入点 aop:pointcut
+        id：切入点名称
+        expression：切入点表达式
+        -->
+        <aop:pointcut id="p" expression="execution(* com.atguigu.spring5.aopxml.Book.buy(..))"/>
+
+    <!--  步骤二：配置切面  aop:aspect
+          ref：指定增强类
+     -->
+        <aop:aspect ref="bookProxy">
+            <!--增强作用在具体的方法上
+                有aop:before aop:after aop:after-returning aop:after-throwing aop:around
+                method:作用在哪个方法上，方法名
+                pointcut-ref:作用在哪一个切入点上
+            -->
+            <aop:before method="before" pointcut-ref="p"></aop:before>
+        </aop:aspect>
+    </aop:config>
+```
+
+
 
 # 四、JdbcTemplate
 
