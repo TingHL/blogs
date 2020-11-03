@@ -123,7 +123,7 @@ Bean管理指的是：Spring创建对象、Spring注入属性
 
 - DI：依赖注入，就是注入属性（DI是IOC的一种具体实现，表示依赖注入，或者是注入属性，需要在创建对象的基础上完成）
 
-  有两种方式注入属性：使用set方法进行注入，使用有参数构造注入
+  **有两种方式注入属性：使用set方法进行注入，使用有参数构造注入**
 
   ##### set方法注入
 
@@ -173,7 +173,7 @@ Bean管理指的是：Spring创建对象、Spring注入属性
 
   第二步：在Spring配置文件中进行配置
 
-  ```java
+  ```xml
   <bean id="orders" class="com.atguigu.spring5.Orders">
   	<constructor-arg name="oname" value="abc"/>
       <constructor-arg name="address" value="china"/>
@@ -1204,7 +1204,6 @@ execution(* com.atguigu.dao.*.*(..))
 
 ```java
 public class User {
-
     //    前置通知
     public void add(){
         System.out.println("add ...");
@@ -1411,9 +1410,357 @@ public class BookProxy {
     </aop:config>
 ```
 
-
-
 # 四、JdbcTemplate
+
+# 4.1 JDBCTemplate说明
+
+Spring框架对JDBC进行封装，使用JDBCTemplate方便实现对数据库操作
+
+# 4.2 准备工作
+
+## 4.2.1 引入相关jar包
+
+![image-20201103114921764](./images/image-20201103114921764.png)
+
+## 4.2.2 在Spring配置文件中配置数据库的连接池
+
+```xml
+<!--数据库连接池-->
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource" destroy-method="close">
+        <property name="url" value="jdbc:mysql://localhost:3306/user_db?useUnicode=true&amp;characterEncoding=UTF-8&amp;serverTimezone=UTC"/>
+        <property name="username" value="root2"/>
+        <property name="password" value="root"/>
+        <property name="driverClassName" value="com.mysql.cj.jdbc.Driver"/>
+    </bean>
+```
+
+## 4.2.3 配置jdbcTemplate对象，注入DataSource
+
+***jdbcTemplate操作数据库dataSource对象***
+
+```xml
+<!--    创建JDBCTemplate 对象-->
+    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+    <!--  注入对象dataSource set方法注入-->
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+```
+
+## 4.2.4 创建Service类，创建dao类，注入
+
+***在Service中注入dao，在dao中注入jdbcTemplate***
+
+![image-20201103153231253](./images/image-20201103153231253.png)
+
+- 配置文件中
+
+  ```xml
+      <!--  组件扫描  -->
+      <context:component-scan base-package="com.atguigu"></context:component-scan>
+  ```
+
+- Service 
+
+  ```java
+  @Service
+  public class BookService {
+      //注入dao
+      @Autowired
+      private BookDao bookDao;
+  }
+  ```
+
+- Dao
+
+  ```java
+  @Repository
+  public class BookDaoImpl implements BookDao{
+  //    注入JdbcTemplate
+      @Autowired
+      private JdbcTemplate jdbcTemplate;
+  }
+  ```
+
+# 4.3 jdbcTemplate操作数据库（添加操作）
+
+![image-20201103155319942](./images/image-20201103155319942.png)
+
+
+
+## 4.3.1 对应数据库创建实体类
+
+创建的类属性与数据库中的表字段相对应，并生成set和get方法，创建Book类
+
+![image-20201103155154870](./images/image-20201103155154870.png)
+
+```java
+package com.atguigu.spring5.entity;
+public class Book {
+    private String userId;
+    private String username;
+    private String ustatus;
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getUstatus() {
+        return ustatus;
+    }
+
+    public void setUstatus(String ustatus) {
+        this.ustatus = ustatus;
+    }
+}
+```
+
+## 4.3.2 编写service和dao
+
+### 4.3.2.1 在dao进行数据库添加操作
+
+```java
+@Service
+public class BookService {
+    //注入dao
+    @Autowired
+    private BookDao bookDao;
+
+    //添加的方法
+    public void addBook(Book book){
+        bookDao.add(book);
+    }
+}
+```
+
+```java
+@Repository
+public class BookDaoImpl implements BookDao{
+//    注入JdbcTemplate
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    //添加的方法
+    @Override
+    public void add(Book book) {
+        //1.SQL语句
+        String sql="insert into t_book values(?,?,?)";
+        //2.调用方法实现
+        Object[] args={book.getUserId(),book.getUsername(),book.getUstatus()};
+        //int update=jdbcTemplate.update(sql,book.getUserId(),book.getUsername(),book.getUstatus());
+        int update=jdbcTemplate.update(sql,args);
+        System.out.println("update数据库影响行数："+update);
+    }
+}
+```
+
+## 4.3.2.2 调用jdbcTemplate对象里面update方法实现添加操作
+
+- 有两个参数
+  - 参数一：SQL语句
+  - 参数二：可变参数，设置SQL语句中的值
+
+![image-20201103155726030](./images/image-20201103155726030.png)
+
+## 4.3.3 测试类
+
+```java
+   @Test
+    public void testJdbcTemplate(){
+        ApplicationContext context=new ClassPathXmlApplicationContext("bean1.xml");
+        BookService bookService=context.getBean("bookService",BookService.class);
+
+        Book book=new Book();
+        book.setUserId("1");
+        book.setUsername("Java");
+        book.setUstatus("A");
+
+        bookService.addBook(book);
+    }
+```
+
+<img src="./images/image-20201103172526704.png" alt="image-20201103172526704" style="zoom:80%;" />
+
+![image-20201103172616539](./images/image-20201103172616539.png)
+
+# 4.4 jdbcTemplate 操作数据库（修改、删除）
+
+## 4.4.1 修改操作
+
+```java
+    @Override
+    public void updateBook(Book book) {
+        String sql="update t_book set username=?,ustatus=? where user_id=?";
+        Object[] args={book.getUsername(),book.getUstatus(),book.getUserId()};
+        int update=jdbcTemplate.update(sql,args);
+        System.out.println("update数据库影响的行数："+update);
+    }
+```
+
+## 4.4.2 删除操作
+
+```java
+    @Override
+    public void delete(String id) {
+        String sql="delete from t_book where user_id=?";
+        int update=jdbcTemplate.update(sql,id);
+        System.out.println("update数据库影响的行数："+update);
+    }
+```
+
+# 4.5 jdbcTemplate数据库（查询返回某个值）
+
+## 4.5.1 示例：查询返回某个值
+
+## 4.5.2 使用JdbcTemplate实现查询返回某个值代码
+
+![image-20201103190247249](./images/image-20201103190247249.png)
+
+有两个参数：
+
+- 第一个参数SQL语句
+- 第二个参数返回类型的class
+
+```java
+    @Override
+    public int selectCount() {
+        String sql="select count(*) from t_book";
+        Integer count=jdbcTemplate.queryForObject(sql,Integer.class);
+        return count;
+    }
+```
+
+# 4.6 jdbcTemplate数据库（查询返回对象）
+
+## 4.6.1  jdbcTemplate实现查询返回对象
+
+![image-20201103192335717](./images/image-20201103192335717.png)
+
+有三个参数：
+
+- 参数一：SQL语句
+- 参数二：RowMapper是接口，针对返回的不同类型数据，利用这个接口的实现类完成数据的封装
+- 参数三：SQL语句值
+
+```java
+    @Override
+    public Book findBookInfo(String id) {
+        String sql="select * from t_book where user_id=?";
+        Book book=jdbcTemplate.queryForObject(sql,new BeanPropertyRowMapper<Book>(Book.class),id);
+        return book;
+    }
+```
+
+# 4.7 jdbcTemplate操作数据库（查询返回集合）
+
+## 4.7.1 jdbcTemplate方法实现查询返回集合
+
+![image-20201103193239023](./images/image-20201103193239023.png)
+
+```java
+    @Override
+    public List<Book> findAllBook() {
+        String sql="select * from t_book";
+        List<Book> bookList =jdbcTemplate.query(sql,new BeanPropertyRowMapper<Book>(Book.class));
+        return bookList;
+    }
+```
+
+# 4.8 jdbcTemplate操作数据库（批量操作）
+
+操作表里面的多条记录
+
+## 4.8.1 JDBCTemplate实现批量添加操作
+
+![image-20201103193951960](./images/image-20201103193951960.png)
+
+两个参数：
+
+- 第一个参数：SQL查询语句
+- 第二个参数：ListJ集合，添加的多条记录
+
+```java
+    @Override
+    public void batchAddBook(List<Object[]> batchArgs) {
+        String sql="insert into t_book values(?,?,?)";
+        int[] ints=jdbcTemplate.batchUpdate(sql,batchArgs);
+        System.out.println(Arrays.toString(ints));
+    }
+```
+
+测试类
+
+```java
+    @Test
+    public void testJdbcTemplatebatchAdd(){
+        ApplicationContext context=new ClassPathXmlApplicationContext("bean1.xml");
+        BookService bookService=context.getBean("bookService",BookService.class);
+        List<Object[]> batchArgs=new ArrayList<>();
+        Object[] o1={"3","CC","C"};
+        Object[] o2={"4","C++","D"};
+        Object[] o3={"5","COMPILE","CM"};
+        batchArgs.add(o1);
+        batchArgs.add(o2);
+        batchArgs.add(o3);
+        bookService.batchAdd(batchArgs);
+    }
+```
+
+![image-20201103202052681](./images/image-20201103202052681.png)
+
+## 4.8.2 jdbcTemplate操作数据（批量修改 删除）
+
+### 4.8.2.1 批量修改
+
+```java
+@Override
+public void batchUpdate(List<Object[]> batchArgs) {
+	String sql="update t_book set username=?,ustatus=? where user_id=?";
+    int[] ints=jdbcTemplate.batchUpdate(sql,batchArgs);
+    System.out.println(Arrays.toString(ints));
+}
+```
+
+```java
+//测试类
+@Test
+public void testJdbcTemplatebatchUpdate(){
+    ApplicationContext context=new ClassPathXmlApplicationContext("bean1.xml");
+    BookService bookService=context.getBean("bookService",BookService.class);
+    List<Object[]> batchArgs=new ArrayList<>();
+    Object[] o1={"CC Update","C","3"};
+    Object[] o2={"C++ Update","D","4"};
+    Object[] o3={"COMPILE Update","CM","5"};
+    batchArgs.add(o1);
+    batchArgs.add(o2);
+    batchArgs.add(o3);
+    bookService.batchUpdate(batchArgs);
+}
+```
+
+### 4.8.2.2 批量删除
+
+```java
+@Override
+public void batchDelete(List<Object[]> batchArgs) {
+    String sql="delete from t_book where user_id=?";
+    int[] update=jdbcTemplate.batchUpdate(sql,batchArgs);
+    System.out.println(Arrays.toString(update));
+}
+```
+
+
 
 # 五、事务管理
 
