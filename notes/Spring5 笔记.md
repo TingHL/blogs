@@ -1760,9 +1760,225 @@ public void batchDelete(List<Object[]> batchArgs) {
 }
 ```
 
-
-
 # 五、事务管理
+
+# 5.1 事务概念
+
+- 事务是数据库操作最基本的单元，逻辑上的一组操作，要么都成功，如果有一个失败所有操作都失败
+- 典型场景：银行转账的场景
+
+# 5.2 事务特性 ACID
+
+## 5.2.1 原子性
+
+## 5.2.2 一致性
+
+## 5.2.3 隔离性
+
+## 5.2.4 持久性
+
+# 5.3 事务操作（搭建事务操作环境）
+
+**银行转账服务示例**
+
+WEB层（视图层）只展示相关的内容，Service 只与业务逻辑相关，Dao数据库操作，与数据相关与实际业务无关
+
+![image-20201104180640611](./images/image-20201104180640611.png)
+
+## 5.3.1 创建数据库表，添加记录
+
+![image-20201104181146611](./images/image-20201104181146611.png)
+
+## 5.3.2 创建service，搭建dao，对象创建和注入关系
+
+service注入dao，在dao注入jdbcTemplate，在jdbcTemplate中注入DataSource
+
+```xml
+    <!--  组件扫描  -->
+    <context:component-scan base-package="com.atguigu"></context:component-scan>
+<!--数据库连接池-->
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource" destroy-method="close">
+        <property name="url" value="jdbc:mysql://localhost:3306/user_db?useUnicode=true&amp;characterEncoding=UTF-8&amp;serverTimezone=UTC"/>
+        <property name="username" value="root2"/>
+        <property name="password" value="root"/>
+        <property name="driverClassName" value="com.mysql.cj.jdbc.Driver"/>
+    </bean>
+
+<!--    创建JDBCTemplate 对象-->
+    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+    <!--  注入对象dataSource set方法注入-->
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+```
+
+```java
+@Service
+public class UserService {
+    @Autowired
+    private UserDao userDao;
+}
+```
+
+```java
+public interface UserDao {
+}
+```
+
+```java
+@Repository
+public class UserDaoImpl implements UserDao{
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+}
+```
+
+## 5.3.3 在dao创建两个方法：多钱和少钱的方法，在service创建转账方法
+
+```java
+public interface UserDao {
+    public void addMoney();
+    public void reduceMoney();
+}
+```
+
+```java
+@Repository
+public class UserDaoImpl implements UserDao{
+    @Override
+    public void addMoney() {
+        String sql="update t_count set money=money+? where username=?";
+        jdbcTemplate.update(sql,100,"mary");
+    }
+
+    //lucy转账100
+    @Override
+    public void reduceMoney() {
+        String sql="update t_account set money=money-? where username=?";
+        jdbcTemplate.update(sql,100,"lucy");
+    }
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+}
+```
+
+```java
+@Service
+public class UserService {
+    @Autowired
+    private UserDao userDao;
+
+    //转账方法
+    public void accountMoney(){
+        // 代码可能产生问题  使用事务进行解决
+        //lucy少100
+        userDao.reduceMoney();
+        //mary多100
+        userDao.addMoney();
+    }
+}
+```
+
+# 5.4 事务操作基本过程
+
+1. 开启事务操作
+2. 进行业务上的操作
+3. 没有发生异常，提交事务
+4. 出现异常，事务回滚
+
+```java
+public void accountMoney(){
+    try{
+        //第一步 开启事务
+        
+        //第二步 进行业务操作
+        //lucy 少100
+        userDao.reduceMoney();
+        
+        //模拟异常
+        int i=10/0;
+        
+        //mary多100
+        userDao.addMoney();
+        
+        //第三步 没有发生异常提交事务
+    }catch(Exception e){
+        //第四步 出现异常，事务回滚
+    }
+}
+```
+
+# 5.5 事务操作（Spring事务管理介绍）
+
+1. 事务添加到JavaEE三层结构里面的Service层（业务逻辑层）
+
+2. 在Spring进行事务管理操作：
+
+   1. 有两种方式：编程式事务管理和声明式事务管理（更多使用）
+
+3. 声明式事务管理
+
+   1. 基于注解方法
+   2. 基于XML配置文件方法
+
+4. 在Spring进行声明式事务管理，底层使用AOP原理
+
+5. Spring事务管理API
+
+   - 提供了一个接口`PlatformTransactionManager`，代表事务管理器，这个接口针对不同的架构提供不同的实现类。例如：针对JDBC模板的实现类`DataSourceTransactionManager`
+
+     ![image-20201104230002978](./image/image-20201104230002978.png)
+
+     ![image-20201104230159026](./image/image-20201104230159026.png)
+
+   - 
+
+# 5.6 事务操作（注解声明式事务管理）
+
+## 5.6.1 在Spring配置文件中配置事务管理器
+
+```xml
+<!--    创建事务管理器 创建PlatformTransactionManger 接口某个实现类的实例-->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <!-- 注入数据源       -->
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+```
+
+## 5.6.2 在spring配置文件，开启事务注解
+
+1. 在spring配置文件中引入名称空间tx
+
+   ```xml
+   <beans xmlns="http://www.springframework.org/schema/beans"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xmlns:context="http://www.springframework.org/schema/context"
+          xmlns:aop="http://www.springframework.org/schema/aop"
+          xmlns:tx="http://www.springframework.org/schema/tx"
+          xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+                              http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+                              http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
+                              http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd
+   ">
+   ```
+
+2. 开启事务注解
+
+   ```xml
+   <!--    开启事务注解
+       transaction-manager指定事务注解-->
+       <tx:annotation-driven transaction-manager="transactionManager"></tx:annotation-driven>
+   ```
+
+3. 在service类上面（获取service类里面方法上面）添加事务注解
+
+   - `@Transaction`可以添加到类上面，也可以添加方法上面
+   - 注解添加到类上面，这个类里面的所有方法都添加事务
+   - 注解添加到类的方法上面，为这个方法添加事务
+
+
+
+# 5.7 事务操作（基于XML配置文件）
 
 # 六、Spring5新特性
 
