@@ -1973,8 +1973,28 @@ public void accountMoney(){
 3. 在service类上面（获取service类里面方法上面）添加事务注解
 
    - `@Transaction`可以添加到类上面，也可以添加方法上面
+
    - 注解添加到类上面，这个类里面的所有方法都添加事务
+
    - 注解添加到类的方法上面，为这个方法添加事务
+
+     ```java
+     @Service
+     @Transactional
+     public class UserService {
+         @Autowired
+         private UserDao userDao;
+     
+         //转账方法
+         public void accountMoney(){
+             //lucy少100
+             userDao.reduceMoney();
+             int i=5/0;
+             //mary多100
+             userDao.addMoney();
+         }
+     }
+     ```
 
 
 
