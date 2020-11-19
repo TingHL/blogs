@@ -1996,7 +1996,150 @@ public void accountMoney(){
      }
      ```
 
-# 5.7 事务操作（基于XML配置文件）
+# 5.7 事务操作（声明式事务管理参数配置）
+
+在service类上面添加注解@Transactional，在这个注解里面可以配置针对事务相关参数
+
+![image-20201119152525516](./images/image-20201119152525516.png)
+
+1. **propagation：事务的传播行为**
+
+   事务传播行为：多事务方法直接进行调用，这个过程中事务是如何进行管理的
+
+   事务方法：对数据库表数据进行变化的操作
+
+   ![image-20201119154213050](./images/image-20201119154213050.png)
+
+   ![image-20201119154131843](./images/image-20201119154131843.png)
+
+   **required**：如果add方法本身有事务，调用update方法之后，update使用当前add里面的事务；如果add方法方法本身没有事务，调用update方法之后，创建新事物
+
+   **require_new**：使用add方法调用update方法，无论add是否有事务，都会创建新事务进行操作。
+
+   ```java
+   @Service
+   @Transactional(propagation = Propagation.REQUIRED)
+   public class UserService {
+       @Autowired
+       private UserDao userDao;
+   
+       //转账方法
+       public void accountMoney(){
+           //lucy少100
+           userDao.reduceMoney();
+           int i=5/0;
+           //mary多100
+           userDao.addMoney();
+       }
+   }
+   ```
+
+2. **isolation：事务隔离级别**
+
+   通过设置事务隔离性，解决读的三个问题（脏读、不可重复读、虚读（幻读））。
+
+   ![image-20201119162114046](./images/image-20201119162114046.png)
+
+   ```java
+   @Transactional(propagation = Propagation.REQUIRED,isolation = Isolation.REPEATABLE_READ)
+   public class UserService {
+   ```
+
+   补充：事务的三个问题
+
+- 事务的特性，隔离性。多事务操作之间不会产生影响。
+
+  有三个读问题：脏读、不可重复读、虚读（幻读）
+
+  脏读：一个未提交事务读取到另一个未提交事务的事务     （一种问题）
+
+  ![image-20201119160457592](./images/image-20201119160457592.png)
+
+  不可重复读：一个未提交事务读取到另一提交事务修改的数据   （一种现象）
+
+  ![image-20201119160945970](./images/image-20201119160945970.png)
+
+  虚读（幻读）：一个未提交事务读取到另一提交事务添加数据
+
+3. **timeout：超时时间** 
+
+   事务需要在一定的时间内进行提交，如果不提交，就会回滚
+
+   默认值是-1，设置时间以秒为单位进行计算
+
+   ```java
+   @Transactional(timeout = -1,propagation = Propagation.REQUIRED,isolation = Isolation.REPEATABLE_READ)
+   public class UserService {
+   ```
+
+   
+
+4. **readOnly：是否只读**
+
+   - 读：查询操作，写：添加修改删除操作
+   - readOnly 默认false，表示可以查询，可以添加删除操作
+   - readOnly值为true，设置为true，表示只可以查询
+
+   
+
+5. **rollbackFor：回滚**
+
+   设置查询哪些异常进行事务回滚
+
+   
+
+6. **noRollbackFor：不回滚**
+
+   设置出现哪些异常，不进行回滚
+
+# 5.8 事务操作（XML声明式事务管理）
+
+1. **在Spring配置文件中进行配置**
+
+   **第一步：配置事务管理器**
+
+   ```xml
+   <!--    创建事务管理器 创建PlatformTransactionManger 接口某个实现类的实例-->
+       <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+           <!-- 注入数据源       -->
+           <property name="dataSource" ref="dataSource"></property>
+       </bean>
+   ```
+
+   **第二步：配置通知**
+
+   ```xml
+       <tx:advice id="txadvice">
+           <!--   配置事务相关参数     -->
+           <tx:attributes>
+               <!--   指定哪种规则的方法上面添加事务    -->
+               <!-- account*  在account开头的方法-->
+               <tx:method name="account*" isolation="READ_COMMITTED" propagation="REQUIRED"/>
+           </tx:attributes>
+       </tx:advice>
+   ```
+
+   
+
+   **第三步：配置切入点，切面**
+
+   ```xml
+   <!--    配置切入点和切面-->
+       <aop:config>
+   <!--        配置切入点-->
+           <aop:pointcut id="pt" expression="execution(* com.atguigu.spring5.service.UserService.*(..))"/>
+   <!--        配置切面-->
+           <aop:advisor advice-ref="txadvice" pointcut-ref="pt"></aop:advisor>
+       </aop:config>
+   ```
+
+# 5.9 事务操作（完全注解声明式事务管理）
+
+## 5.9.1 创建配置类
+
+
+
+
 
 
 
