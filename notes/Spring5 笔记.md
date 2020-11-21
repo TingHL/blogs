@@ -2,8 +2,6 @@
 
 ![image-20201029172549818](./images/image-20201029172549818.png)
 
-n
-
 ## Spring框架概述
 
 1. 轻量级的开源的J2EE应用程序框架
@@ -125,10 +123,12 @@ Bean管理指的是：Spring创建对象、Spring注入属性
 
   **有两种方式注入属性：使用set方法进行注入，使用有参数构造注入**
 
-  ##### set方法注入
+  
+
+  ##### 第一种方式：通过set方法注入
 
   第一步：创建类，定义属性和对应的set方法
-
+  
   ```java
   public class Book {
       private String bname;
@@ -141,57 +141,64 @@ Bean管理指的是：Spring创建对象、Spring注入属性
       public void setBauthor(String bauthor) {
           this.bauthor = bauthor;
       }
-  }
+}
   ```
 
   第二步：在spring配置文件配置对象创建，配置属性注入
-
+  
   ```xml
   <!--    1.Book对象创建-->
-      <bean id="book" class="com.atguigu.spring5.Book">
-          <!--    2.set 方法注入属性-->
-          <!--   name 类的属性名 value 向属性注入的属性值     -->
-          <property name="bname" value="简爱"></property>
-          <property name="bauthor" value="英国"></property>
-      </bean>
+  <bean id="book" class="com.atguigu.spring5.Book">
+  	<!--    2.set 方法注入属性-->
+      <!--   name 类的属性名 value 向属性注入的属性值     -->
+      <property name="bname" value="简爱"></property>
+      <property name="bauthor" value="英国"></property>
+</bean>
   ```
 
-  ##### 有参数构造注入
+  
 
+  ##### 第二种方式：通过有参数构造注入
+  
   第一步：创建类，定义属性，创建属性对应的有参数构造方法
-
+  
   ```java
   private String oname;
   private String address;
   
   //有参数构造
   public Orders(String oname, String address) {
-      this.oname = oname;
+    this.oname = oname;
       this.address = address;
-  }
+}
   ```
-
+  
   第二步：在Spring配置文件中进行配置
-
+  
   ```xml
   <bean id="orders" class="com.atguigu.spring5.Orders">
-  	<constructor-arg name="oname" value="abc"/>
+		<constructor-arg name="oname" value="abc"/>
       <constructor-arg name="address" value="china"/>
-  </bean>
+</bean>
   ```
 
-  ##### P名称空间注入
+  
 
+  
+  
+  ##### 第三种方式：通过P名称空间注入
+  
   使用p名称空间注入，简化基于XML配置方式
+  
 
-  第一步：添加P名称空间在配置文件中
+第一步：添加P名称空间在配置文件中
 
-  ```xml
+```xml
   <beans xmlns="http://www.springframework.org/schema/beans"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:util="http://www.springframework.org/schema/util"
          xmlns:p="http://www.springframework.org/schema/p"
          xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/util https://www.springframework.org/schema/util/spring-util.xsd">
-  ```
+```
 
   第二步：进行属性注入
 
@@ -199,6 +206,8 @@ Bean管理指的是：Spring创建对象、Spring注入属性
   <bean id="book" class="com.atguigu.spring5.Book" p:bauthor="九阳神功" p:bname="达摩">
       </beans>
   ```
+
+
 
 ### 2.3.2.2 XML注入其他类型属性
 
@@ -223,11 +232,11 @@ Bean管理指的是：Spring创建对象、Spring注入属性
      </property>
      ```
 
+
+
 ### 2.3.2.3 注入属性 外部bean
 
-（外部bean，在xml配置文件中，非嵌套关系生成多个bean）
-
-例子：
+（外部bean，在xml配置文件中，非嵌套关系生成多个bean）。例子：
 
 1. 创建两个类service和dao类
 
@@ -240,7 +249,9 @@ Bean管理指的是：Spring创建对象、Spring注入属性
    public interface UserDao {
        public void update();
    }
-   
+   ```
+
+   ```java
    package com.atguigu.spring5.dao;
    public class UserDaoImpl implements UserDao{
        @Override
@@ -248,8 +259,9 @@ Bean管理指的是：Spring创建对象、Spring注入属性
            System.out.println("Dao update ....");
        }
    }
-   
-   
+   ```
+
+   ```java
    package com.atguigu.spring5.service;
    import com.atguigu.spring5.dao.UserDao;
    public class UserService {
@@ -266,6 +278,8 @@ Bean管理指的是：Spring创建对象、Spring注入属性
    }
    ```
 
+   
+
 3. 在spring配置文件中进行配置
 
 ```xml
@@ -278,12 +292,14 @@ Bean管理指的是：Spring创建对象、Spring注入属性
 <bean id="userService" class="com.atguigu.spring5.service.UserService">
         <!--  ref 指向引用创建的对象  -->
         <property name="userDao" ref="userDaoImpl"></property>
-    </bean>
+</bean>
 ```
+
+
 
 ### 2.3.2.4 注入属性 内部bean和级联赋值
 
-（内部bean在一个bean中生成另一个bean对象）
+（内部bean在一个bean中生成另一个bean对象）。例子：
 
 1. 一对多的关系，例如：部分和员工
 2. 在实体类之间表示一对多的关系
@@ -298,8 +314,8 @@ public class Department {
         this.dname = dname;
     }
 }
-
-
+```
+```java
 package com.atguigu.spring5.bean;
 public class Emp {
     private String ename;
@@ -323,18 +339,20 @@ public class Emp {
 
 3. spring 配置文件中进行配置
 
-   ```xml
+```xml
    <bean id="emp" class="com.atguigu.spring5.bean.Emp">
        <property name="ename" value="lucky"></property>
        <property name="gender" value="女"></property>
        <property name="dept">
-           <!-- 在一个bean中嵌套使用另一个对象-->
+           <!-- 在一个bean中嵌套使用另一个对象bean实例-->
            <bean id="dept" class="com.atguigu.spring5.bean.Department">
                <property name="dname" value="安保部"></property>
            </bean>
        </property>
    </bean>
-   ```
+```
+
+
 
 ### 2.3.2.5 注入属性 级联赋值
 
@@ -366,7 +384,7 @@ public class Emp {
            <!-- 级联赋值-->
            <property name="dept" ref="dept"></property>
            <!-- 这种方式需要emp类有get方法-->
-           <property name="dept.dname" value="技术部门"></property>
+           <property name="dept.dname" value="技术部门"></property>   <!-- emp实例的dept.dname为技术部门-->
        </bean>
    
        <bean id="dept" class="com.atguigu.spring5.bean.Department">
@@ -374,13 +392,15 @@ public class Emp {
        </bean>
    ```
 
+
+
 ### 2.3.2.6 IOC操作Bean管理（注入集合属性）
 
 1. 注入数组类型属性
 2. 注入List集合类型的属性
 3. 注入Map集合类型的属性
 
-以上类型，相关步骤：
+针对以上类型，相关步骤：
 
 步骤一：创建类，定义数组、list、map、set类型属性，生成对应set方法
 
@@ -433,6 +453,8 @@ public class Stu
     </bean>
 ```
 
+
+
 #### 在集合属性中设置对象类型值
 
 ```java
@@ -470,6 +492,8 @@ public class Stu
     </bean>
 ```
 
+
+
 #### 把集合注入公共部分提取出来
 
 - 步骤一：在spring配置文件中引入名称空间 util
@@ -496,16 +520,18 @@ public class Stu
 
   ```xml
   <!--   1.提取list集合属性注入-->
-      <util:list id="bookList">
-          <value>简爱</value>
-          <value>飘</value>
-          <value>百年孤独</value>
-      </util:list>
+  <util:list id="bookList">
+       <value>简爱</value>
+       <value>飘</value>
+       <value>百年孤独</value>
+  </util:list>
   <!--    2.提取list类型属性注入使用-->
       <bean id="book" class="com.atguigu.spring5.collectiontype.Book">
           <property name="list" ref="bookList"></property>
       </bean>
   ```
+
+
 
 ### 2.3.2.7 IOC操作Bean管理（FactoryBean）
 
@@ -544,19 +570,23 @@ Spring里面有两种类型的bean，一种普通bean，另外一种工厂bean�
            return false;
        }
    }
+   ```
    
-   
-       @Test
+   ```java
+      @Test
        public void test3(){
            ApplicationContext context=new ClassPathXmlApplicationContext("bean3.xml");
            Course course=context.getBean("myBean",Course.class);
            System.out.println(course);
-       }
+       }    
    ```
-
+```
+   
    ```xml
    <bean id="myBean" class="com.atguigu.spring5.factorybean.MyBean"></bean>
-   ```
+```
+
+
 
 ### 2.3.2.8 IOC操作管理 bean作用域
 
@@ -584,6 +614,8 @@ Spring里面有两种类型的bean，一种普通bean，另外一种工厂bean�
      - 设置scope的值是singleton，加载spring配置文件时就会创建单实例对象
 
        设置scope的值是prototype时，不是在加载spring配置文件时创建对象，在调用getBean时创建对象
+       
+       
 
 ### 2.3.2.9  IOC操作Bean管理（bean生命周期）
 
@@ -628,16 +660,15 @@ Spring里面有两种类型的bean，一种普通bean，另外一种工厂bean�
            System.out.println("第五步 执行销毁的方法");
        }
    }
-   
    ```
-
-   ```xml
+   
+```xml
    <bean id="orders" class="com.atguigu.spring5.bean.Orders" init-method="initMethod" destroy-method="destoryMethod">
        <property name="oname" value="iphone"></property>
    </bean>
-   ```
+```
 
-   ```java
+```java
        @Test
        public void testBean3(){
    //        ClassPathXmlApplicationContext context=new ClassPathXmlApplicationContext("bean4.xml");
@@ -649,9 +680,9 @@ Spring里面有两种类型的bean，一种普通bean，另外一种工厂bean�
            //手动 bean实例销毁
            //ApplicationContext 没有实现close方法 其子类有实现的接口所以进行类型的转换
    //        context.close();
-           ((ClassPathXmlApplicationContext) context).close();
+           ((ClassPathXmlApplicationContext) context.close();
        }
-   ```
+```
 
 4. bean的后置处理器，bean生命周期一共七步
 
@@ -684,13 +715,17 @@ Spring里面有两种类型的bean，一种普通bean，另外一种工厂bean�
    }
    ```
 
+   会为当前配置文件的所有实例添加后置处理器 
+   
    ```xml
    <!--    会为当前配置文件的所有实例添加后置处理器-->
    <!--    配置后置处理器-->
-       <bean id="myBeanPost" class="com.atguigu.spring5.bean.MyBeanPost"></bean>
+    <bean id="myBeanPost" class="com.atguigu.spring5.bean.MyBeanPost"></bean>
    ```
-
+   
    ![image-20201030212020565](./images/image-20201030212020565.png)
+
+
 
 ### 2.3.2.10 IOC 操作Bean管理（自动装配）
 
@@ -732,6 +767,8 @@ Spring里面有两种类型的bean，一种普通bean，另外一种工厂bean�
    <!-- id的名称无限制，只与对象的类型相关-->
        <bean id="deptTwo" class="com.atguigu.spring5.autowire.Dept"></bean>
    ```
+
+
 
 ### 2.3.2.11 IOC 操作Bean管理（外部属性文件）
 
@@ -782,6 +819,8 @@ Spring里面有两种类型的bean，一种普通bean，另外一种工厂bean�
            <property name="password" value="${prop.password"></property>
        </bean>
    ```
+
+
 
 ## 2.3.3 IOC操作Bean管理（基于注解方式)
 
@@ -855,6 +894,8 @@ public void testService(){
 }
 ```
 
+
+
 ### 2.3.3.4 开启组件扫描细节配置
 
 示例一：
@@ -880,6 +921,8 @@ context:exclude-filter：设置不扫描哪些内容 type="annotation" (annotati
         <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
     </context:component-scan>
 ```
+
+
 
 ### 2.3.3.5 基于注解方式实现属性注入
 
@@ -921,6 +964,8 @@ public class UserService {
 }
 ```
 
+
+
 #### @Qualifier：根据属性名称进行注入示例
 
 必须与@AutoWired一起使用
@@ -950,6 +995,8 @@ public class UserService {
 }
 ```
 
+
+
 #### @Resource：可以根据类型注入，也可以根据名称注入示例
 
 来自javax.annotaion.Resource 拓展包中
@@ -962,12 +1009,16 @@ private UserDao userDao;
 private UserDao userDao;
 ```
 
+
+
 #### @Value：注入普通类型属性示例
 
 ```java
 @Value(value = "abc") //@注入属性值
 private String nname;
 ```
+
+
 
 ### 2.3.3.6 完全注解开发
 
@@ -1004,19 +1055,19 @@ private String nname;
 
 # 3.2 AOP底层原理
 
-先介绍底层原理如何实现，在介绍使用注解封装之后的简单的使用方法3.5小节AOP操作（AspectJ注解）
+先介绍底层原理如何实现，在介绍使用注解封装之后，更简单的使用方法AOP操作（AspectJ注解）
 
 ## 3.2.1 AOP底层使用动态代理
 
 1. 有两种情况的动态代理
 
-   - 第一种情况：**有接口的情况 使用JDK动态代理**
+   - **第一种情况：有接口的情况 使用JDK动态代理**
 
      创建**接口实现类的代理对象**，通过代理对象增强类的方法（增加新的功能）
 
      ![image-20201031202508450](./images/image-20201031202508450.png)
 
-   - 第二种情况：**没有接口的情况 使用CGLIB动态代理**
+   - **第二种情况：没有接口的情况 使用CGLIB动态代理**
 
      创建**子类的代理对象**，增强类的方法
 
@@ -1076,20 +1127,21 @@ private String nname;
    import java.util.Arrays;
    
    public class JDKProxy {
-   
        public static void main(String[] args) {
            //创建要实现方法增强的接口类
            Class[] interfaces={UserDao.class};
            UserDaoImpl userDaoImpl=new UserDaoImpl();
-           //接口等于实现类的代理对象  Proxy.newProxyInstance创建接口实现类的代理对象
+           //接口等于实现类的代理对象  Proxy.newProxyInstance创建接口实现类的代理对象  
+           //UserDaoProxy为代理对象，在其中调用原来的方法，同时进行了增强
            UserDao dao =(UserDao)Proxy.newProxyInstance(JDKProxy.class.getClassLoader(),interfaces,new UserDaoProxy(userDaoImpl));
            int result=dao.add(1,2);
            System.out.println(result);
            dao.update("1234556Strings");
        }
-   
    }
+   ```
    
+   ```java
    //创建代理对象代码 里面写一些增强逻辑
    class UserDaoProxy implements InvocationHandler {
        //1. 把被代理对象传递进来
@@ -1158,9 +1210,8 @@ private String nname;
 
 ## 3.4.2 基于AspectJ实现AOP操作
 
-### 3.4.2.1 基于XML配置文件实现
-
-### 3.4.2.2 基于注解方式实现
+-  **基于XML配置文件实现**
+-  **基于注解方式实现**
 
 ## 3.4.3 在项目工程里面引入AOP相关依赖
 
@@ -1200,7 +1251,7 @@ execution(* com.atguigu.dao.*.*(..))
 
 # 3.5 AOP操作（AspectJ注解）
 
-## 3.5.1 创建类，在类里面定义方法（被增强）
+## 3.5.1 创建类，在类里面定义方法（被增强的方法）
 
 ```java
 public class User {
@@ -1328,33 +1379,33 @@ public class UserProxy {
     }
 ```
 
+
+
 ## 3.5.6 有多个增强类对同一个方法进行增强，设置增强类的优先级
 
-1. 在增强类上面增加注解`@Order(数字类型的值)`，数字类型的值越小优先级越高，0、1、2、......
+在增强类上面增加注解`@Order(数字类型的值)`，数字类型的值越小优先级越高，0、1、2、......
 
-   ```java
-   //增强类
-   @Component
-   @Aspect  //生成代理对象
-   @Order(3)  //代理对象优先级
-   public class UserProxy {
-       //todo
-   }
-   ```
+```java
+//增强类
+@Component
+@Aspect  //生成代理对象
+@Order(3)  //代理对象优先级
+public class UserProxy {
+    //todo
+}
+```
 
 ## 3.5.7 完全使用注解开发
 
-1. 创建配置类，不需要配置XML配置文件
+创建配置类，不需要配置XML配置文件
 
-   ```java
-   @Configuration     //配置类
-   @ComponentScan(basePackages = {"com.atguigu"})    //开启组件扫描
-   @EnableAspectJAutoProxy(proxyTargetClass = true)  //开启AspectJ 代理对象
-   public class ConfigAop {
-   }
-   ```
-
-2. 
+```java
+@Configuration     //配置类
+@ComponentScan(basePackages = {"com.atguigu"})    //开启组件扫描
+@EnableAspectJAutoProxy(proxyTargetClass = true)  //开启AspectJ 代理对象
+public class ConfigAop {
+}
+```
 
 # 3.6 AOP操作（AspectJ配置文件）
 
@@ -1370,7 +1421,6 @@ public class Book {
 
 ```java
 public class BookProxy {
-
     public void before(){
         System.out.println("before....");
     }
@@ -1436,7 +1486,7 @@ Spring框架对JDBC进行封装，使用JDBCTemplate方便实现对数据库操�
 
 ## 4.2.3 配置jdbcTemplate对象，注入DataSource
 
-***jdbcTemplate操作数据库dataSource对象***
+jdbcTemplate操作数据库dataSource对象
 
 ```xml
 <!--    创建JDBCTemplate 对象-->
@@ -1448,15 +1498,15 @@ Spring框架对JDBC进行封装，使用JDBCTemplate方便实现对数据库操�
 
 ## 4.2.4 创建Service类，创建dao类，注入
 
-***在Service中注入dao，在dao中注入jdbcTemplate***
+在Service中注入dao，在dao中注入jdbcTemplate
 
 ![image-20201103153231253](./images/image-20201103153231253.png)
 
 - 配置文件中
 
   ```xml
-      <!--  组件扫描  -->
-      <context:component-scan base-package="com.atguigu"></context:component-scan>
+  <!--  组件扫描  -->
+  <context:component-scan base-package="com.atguigu"></context:component-scan>
   ```
 
 - Service 
@@ -2137,11 +2187,52 @@ public void accountMoney(){
 
 ## 5.9.1 创建配置类
 
+```java
+@Configuration //配置类
+@ComponentScan(basePackages = "com.atguigu.spring5")  //开启组件扫描
+@EnableTransactionManagement //开启事务
+public class TxConfig {
+//    创建数据库的链接池
+    @Bean  //创建对象实例
+    public DruidDataSource getDruidDataSource(){
+        DruidDataSource dataSource=new DruidDataSource();
+        dataSource.setDriverClassName("com.alibaba.druid.pool.DruidDataSource");
+        dataSource.setUrl("jdbc:mysql://localhost:3306/user_db?useUnicode=true&amp;characterEncoding=UTF-8&amp;serverTimezone=UTC");
+        dataSource.setName("root2");
+        dataSource.setPassword("root");
+        return dataSource;
+    }
+
+    //jdbcTemplate 模板对象
+    @Bean
+    public JdbcTemplate getJdbcTemplate(DataSource dataSource){
+        //到ioc容器中根据类型找到dataSource对象
+        JdbcTemplate jdbcTemplate=new JdbcTemplate();
+        //注入DataSource
+        jdbcTemplate.setDataSource(dataSource);
+        return jdbcTemplate;
+    }
+
+    //创建事务管理器的对象
+    @Bean
+    public DataSourceTransactionManager getDataSourceTrasactionManager(DataSource dataSource){
+        DataSourceTransactionManager transactionManager=new DataSourceTransactionManager();
+        transactionManager.setDataSource(dataSource);
+        return transactionManager;
+    }
+}
+```
+
+![image-20201119175516422](./images/image-20201119175516422.png)
+
+```java
+    @Test
+    public void testAccount3(){
+        ApplicationContext context=new AnnotationConfigApplicationContext(TxConfig.class);
+        UserService userService=context.getBean("userService", UserService.class);
+        userService.accountMoney();
+    }
+```
 
 
-
-
-
-
-# 六、Spring5新特性
 
