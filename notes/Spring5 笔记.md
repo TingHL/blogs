@@ -1539,7 +1539,7 @@ jdbcTemplate操作数据库dataSource对象
 
 ## 4.3.1 对应数据库创建实体类
 
-创建的类属性与数据库中的表字段相对应，并生成set和get方法，创建Book类
+创建的类属性与数据库中的表字段相对应，并生成set和get方法，创建Book类（创建数据库表对应的类）
 
 ![image-20201103155154870](./images/image-20201103155154870.png)
 
@@ -1977,9 +1977,9 @@ public void accountMoney(){
 
    - 提供了一个接口`PlatformTransactionManager`，代表事务管理器，这个接口针对不同的架构提供不同的实现类。例如：针对JDBC模板的实现类`DataSourceTransactionManager`
 
-     ![image-20201104230002978](./image/image-20201104230002978.png)
+     ![image-20201104230002978](images/image-20201104230002978.png)
 
-     ![image-20201104230159026](./image/image-20201104230159026.png)
+     ![image-20201104230159026](images/image-20201104230159026.png)
 
    - 
 
@@ -1997,7 +1997,7 @@ public void accountMoney(){
 
 ## 5.6.2 在spring配置文件，开启事务注解
 
-1. 在spring配置文件中引入名称空间tx
+1. 在spring配置文件中引入**名称空间tx**
 
    ```xml
    <beans xmlns="http://www.springframework.org/schema/beans"
@@ -2022,7 +2022,7 @@ public void accountMoney(){
 
 3. 在service类上面（获取service类里面方法上面）添加事务注解
 
-   - `@Transaction`可以添加到类上面，也可以添加方法上面
+   - `@Transactional`可以添加到类上面，也可以添加方法上面
 
    - 注解添加到类上面，这个类里面的所有方法都添加事务
 
