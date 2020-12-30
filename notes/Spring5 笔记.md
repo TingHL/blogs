@@ -1,20 +1,46 @@
+  Spring模块划分图：
+
+1. Test：Spring的单元测试模块
+2. Core Container ：核心容器
+3. AOP + Aspects： 面向切面编程模块
+4. Data Access/Integeration：数据访问 集成
+5. Web：Spring开发WEB开发模块
+
 ![image-20201029172549818](./images/image-20201029172549818.png)
 
 # Spring框架概述
 
-1. 轻量级的开源的J2EE应用程序框架
+1. 轻量级的开源的J2EE应用程序框架 容器框架 容器（可以管理所有的组件（类））框架
+
 2. 解决企业应用开发的复杂性
-3. Spring有两个核心的部分：IOC和AOP
+
+3. 两个核心的部分：IOC和AOP
+
 4. Spring特点：
    - 方便解耦，简化开发
    - AOP编程的支持
    - 方便程序的测试
    - 方便和其他框架进行整合
    - 降低Java EE API的使用难度
+   
+5. 注：
+
+   框架：高度抽取可重用代码的一种设计，高度的可重用性
+
+6. ![image-20201228164344526](images/image-20201228164344526.png)
+
+7. 
 
 # IOC 容器
 
 **IOC，Inversion of Control ，控制反转，把对象创建和对象之间的调用过程交给spring进行管理，目的降低耦合度。**
+
+控制：资源的获取方式
+
+- 主动式：自己主动创建
+- 被动式：资源的获取不是程序员主动创建，由容器创建和设置
+
+容器：管理所有的组件（有功能的类）；容器可以自动探查哪些组件（类）需要用到另一个组件（类），容器帮我们创建资源，并赋值过去；主动的new 资源变为被动的接受资源
 
 ## IOC 底层原理
 
@@ -67,6 +93,7 @@ class UserFactory{
      **加载配置文件时，就会把在配置文件中的对象进行创建**
 
    ```java
+   //根据spring的配置文件得到IOC容器对象
    ApplicationContext context=new ClassPathXmlApplicationContext("bean1.xml");
    User user=context.getBean("user",User.class);
    user.add();
@@ -74,9 +101,9 @@ class UserFactory{
 
 3. `ApplicationContext`接口实现类：
 
-	- `FileSystemXmlApplicationContext`：带盘符的路径（文件全路径）
+	- `FileSystemXmlApplicationContext`：带盘符的路径 文件全路径 
 
-	- `ClassPathXmlApplicationContext`：类路径
+	- `ClassPathXmlApplicationContext`：类路径  IOC容器的配置文件在类路径下
 
 # IOC操作Bean管理
 
@@ -108,18 +135,20 @@ class UserFactory{
 
 - **创建对象时，默认执行无参数的构造方法（反射用到的就是无参数构造函数）**
 
-### 属性注入
+### 属性注入 
 
 **通过XML方式注入属性**
 
 - DI：依赖注入，就是注入属性（DI是IOC的一种具体实现，表示依赖注入，或者是注入属性，需要在创建对象的基础上完成）
+
+  容器能够知道哪个组件（类）运行的时候，需要另外一个类（组件）；容器通过反射的形式，将容器中准备好的对象注入（利用反射给属性赋值）
 
   **有两种方式注入属性：使用set方法进行注入，使用有参数构造注入**
 
   
 
   ##### 第一种方式：通过set方法注入
-
+  
   示例第一步：创建类，定义属性和对应的set方法
   
   ```java
@@ -132,25 +161,27 @@ class UserFactory{
       }
   
       public void setBauthor(String bauthor) {
-          this.bauthor = bauthor;
+        this.bauthor = bauthor;
       }
 }
   ```
-
+  
   第二步：在spring配置文件配置对象创建，配置属性注入
   
   ```xml
   <!--    1.Book对象创建-->
   <bean id="book" class="com.atguigu.spring5.Book">
   	<!--    2.set 方法注入属性-->
-      <!--   name 类的属性名 value 向属性注入的属性值     -->
+      <!--   name的值是由getter/setter方法（去掉set或get以后）后确定的
+           value 向属性注入的属性值     -->
       <property name="bname" value="简爱"></property>
-      <property name="bauthor" value="英国"></property>
-</bean>
+    <property name="bauthor" value="英国"></property>
+  </bean>
   ```
-
+```
   
-
+  
+  
   ##### 第二种方式：通过有参数构造注入
   
   第一步：创建类，定义属性，创建属性对应的有参数构造方法
@@ -160,27 +191,38 @@ class UserFactory{
   private String address;
   
   //有参数构造
-  public Orders(String oname, String address) {
+public Orders(String oname, String address) {
     this.oname = oname;
       this.address = address;
-}
-  ```
-  
+  }
+```
+
   第二步：在Spring配置文件中进行配置
-  
+	
   ```xml
-  <bean id="orders" class="com.atguigu.spring5.Orders">
-		<constructor-arg name="oname" value="abc"/>
-      <constructor-arg name="address" value="china"/>
-</bean>
+<bean id="orders" class="com.atguigu.spring5.Orders">
+  	<constructor-arg name="oname" value="abc"/>
+    <constructor-arg name="address" value="china"/>
+  </bean>
+
+  <!-- 另外一个示例  重载情况下type可以指定参数的类型-->
+  <!-- public Person(String lastName,Integer age,String gender)-->
+  <!-- public Person(String lastName,String email,String gender)-->
+  <bean id="person" class="com.atguigu.bean.Person">
+      <constructor-arg value="小丽"></constructor-arg>
+      <constructor-arg value="10" index="1" type="java.lang.Integer"></constructor-arg>
+      <constructor-arg value="男"></constructor-arg>
+  </bean>
   ```
 
   ##### 第三种方式：通过P名称空间注入
 
   使用p名称空间注入，简化基于XML配置方式
-  
+
+  （名称空间：在XML文件中名称空间用来防止标签重复）
+
   第一步：添加P名称空间在配置文件中
-  
+
   ```xml
   <beans xmlns="http://www.springframework.org/schema/beans"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
@@ -188,9 +230,9 @@ class UserFactory{
            xmlns:p="http://www.springframework.org/schema/p"
            xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/util https://www.springframework.org/schema/util/spring-util.xsd">
   ```
-  
+
     第二步：进行属性注入
-  
+
   ```xml
   <bean id="book" class="com.atguigu.spring5.Book" p:bauthor="九阳神功" p:bname="达摩"></beans>
   ```
@@ -370,7 +412,7 @@ public class Emp {
            <!-- 级联赋值-->
            <property name="dept" ref="dept"></property>
            <!-- 这种方式需要emp类有get方法-->
-           <property name="dept.dname" value="技术部门"></property>   <!-- 该emp实例的dept.dname属性为技术部门-->
+           <property name="dept.dname" value="技术部门"></property>   <!-- 修改dept实例属性，引用修改，即该实例修改，dept.dname属性为技术部门-->
        </bean>
    
        <bean id="dept" class="com.atguigu.spring5.bean.Department">
@@ -398,6 +440,7 @@ public class Stu{
     private List<String> list;
     private Map<String,String> maps;
     private Set<String> sets;
+    private Properties properties;
     //构造器方法 set get等方法
 }
 ```
@@ -435,6 +478,15 @@ public class Stu{
                 <value>MySQL</value>
                 <value>Redis</value>
             </set>
+        </property>
+        
+        <!-- properties类型属性注入   private Properties properties; -->
+        <property name="properties">
+            <!-- properties=new Properties(); 所有的K=V都是string -->
+            <props>
+                <prop key="username">root</prop>
+                <prop key="password">root</prop>
+            </props>
         </property>
     </bean>
 ```
@@ -476,7 +528,7 @@ public class Stu
     </bean>
 ```
 
-#### 把集合注入公共部分提取出来
+#### 把集合注入公共部分提取出来 名称空间`util`
 
 - 步骤一：在spring配置文件中引入名称空间 util
 
@@ -489,7 +541,7 @@ public class Stu
                              http://www.springframework.org/schema/util  http://www.springframework.org/schema/util/spring-util.xsd">
   ```
 
-- 步骤二：使用util标签 完成公共部分抽取，以集合list为例
+- 步骤二：使用`util`标签 完成公共部分抽取，以集合list为例
 
   ```java
   public class Book 
@@ -513,9 +565,99 @@ public class Stu
   </bean>
   ```
 
-### FactoryBean
+#### 通过继承实现bean配置信息的重用
+
+```xml
+<!-- abstract="true" :这个bean的配置是一个抽象的，不能获取他的实例，只能被别人用来继承 -->
+<bean id="person05" class="com.atguigu.bean.Person" abstract="true">
+    <property name="lastName" value="张三"></property>
+    <property name="age" value="18"></property>
+    <property name="gender" value="男"></property>
+    <property name="email" value="zhangsan@atguigu.com"></property>
+</bean>
+
+<bean id="person06" class="com.atguigu.bean.Person" parent="person05">
+    <property name="lastName" value="李四"></property> <!-- 需要改变的属性 其他的继承不变-->
+</bean>
+```
+
+### Bean之间的依赖
+
+原来是按照配置的顺序创建bean
+
+```xml
+<!-- 创建顺序是：car person book-->
+<bean id="car" class="com.atguigu.bean.Car"></bean>
+<bean id="person" class="com.atguigu.bean.Person"></bean>
+<bean id="book" class="com.atguigu.bean.Book"></bean>
+```
+
+改变bean的创建顺序
+
+```xml
+<!--创建顺序是：person book car  -->
+<bean id="car" class="com.atguigu.bean.Car" depends-on="person,book"></bean>
+<bean id="person" class="com.atguigu.bean.Person"></bean>
+<bean id="book" class="com.atguigu.bean.Book"></bean>
+```
+
+
+
+### 静态工厂 实例工厂
+
+静态工厂：工厂本身不用创建对象，通过静态方法调用，`对象=工厂类.工厂方法名()`
+
+实例工厂：工厂本身需要创建对象；`工厂类.工厂对象=new 工厂类();	工厂对象.getInstance("xxx",xxxx[...]);`
+
+```java
+//静态工厂
+public class AirPlaneStaticInstanceFactory{
+    public static AirPlane getAirPlane(String name){
+        AirPlane airPlane=new AirPlane();
+        airPlane.setName(name);
+       	return airPlane;
+    }
+}
+
+//实例工厂
+public class AirPlaneInstanceFactory{
+    public AirPlane getAirPlane(String name){
+        AirPlane airPlane=new AirPlane();
+        airPlane.setName(name);
+       	return airPlane;
+    }
+}
+```
+
+```xml
+<!-- 静态工厂（不需要创建工厂本身） 
+	class：指定静态工厂全类名
+	factory-method：指定哪个方法是工厂方法
+	construct-arg：可以为方法传递参数
+-->
+<bean id="airPlane01" class="com.atguigu.factory.AirPlaneStaticInstanceFactory" factory-method="getAirPlane">
+    <constructor-arg name="airPlaneName" value="xxxx"></constructor-arg>
+</bean>
+
+<!-- 实例工厂模式
+	1.先配置出实例工厂对象
+	2.配置我们要创建的AirPlane使用哪个工厂实例
+		1) factory-bean：指定使用哪个工厂实例
+		2) factory-method:使用哪个工厂方法
+-->
+<bean id="airPlanInstanceFactory" class="com.atguigu.factory.AirPlaneInstanceFactory"></bean>
+<bean id="airPlane02" class="com.atguigu.bean.AirPlane" factory-bean="airPlaneInstanceFactory" factory-method="getAirPlane">
+    <constructor-arg name="airPlaneName" value="xxxx"></constructor-arg>
+</bean>
+```
+
+
+
+### FactoryBean  
 
 Spring里面有两种类型的bean，一种普通bean，另外一种工厂bean（`FactoryBean`）。
+
+FactoryBean 是Spring规定的一个接口，只要是这个接口的实现类，Spring都认为是一个工厂
 
 1. 普通bean
 
@@ -523,7 +665,7 @@ Spring里面有两种类型的bean，一种普通bean，另外一种工厂bean�
 
 2. 工厂bean（`FactoryBean`）
 
-   特点：在配置文件中定义bean类型可以和返回类型不一致
+   特点：在配置文件中定义bean类型可以和返回类型不一致，在IOC容器启动的时候，不会创建实例，获取的时候才创建对象（不关`isSingleton`函数）
 
    第一步：创建类，让其做为工厂bean，实现接口`FactoryBean`
 
@@ -531,7 +673,7 @@ Spring里面有两种类型的bean，一种普通bean，另外一种工厂bean�
 
    ```java
    public class MyBean implements FactoryBean<Course> {    
-       //    定义返回bean
+       // 工厂方法：定义返回的bean对象
        @Override
        public Course getObject() throws Exception {
            Course course=new Course();
@@ -539,9 +681,11 @@ Spring里面有两种类型的bean，一种普通bean，另外一种工厂bean�
            return course;
        }
    
+       //返回创建的对象的类型
+       //Spring会自动调用这个方法来确认创建的对象是什么类型
        @Override
        public Class<?> getObjectType() {
-           return null;
+           return Course.class;
        }
    
        @Override
@@ -572,7 +716,7 @@ Spring里面有两种类型的bean，一种普通bean，另外一种工厂bean�
 
 3. bean实例设置
 
-   - 在Spring配置文件bean标签里面有**属性（scope）**用于设置单实例还是多实例  
+   - 在Spring配置文件bean标签里面有**属性（scope）用于设置单实例还是多实例  **
 
    - scope属性值：
 
@@ -587,7 +731,7 @@ Spring里面有两种类型的bean，一种普通bean，另外一种工厂bean�
 
      - singleton表示单实例，prototype表示多实例
 
-     - 设置scope的值是singleton，加载spring配置文件时就会创建单实例对象
+     - 设置scope的值是singleton，加载spring配置文件时就会创建单实例对象，保存在容器中
 
        设置scope的值是prototype时，不是在加载spring配置文件时创建对象，在调用getBean时创建对象
        
@@ -600,10 +744,22 @@ Spring里面有两种类型的bean，一种普通bean，另外一种工厂bean�
 2. bean生命周期
 
    - 第一步：通过构造器创建bean实例（无参数构造）
+
    - 第二步：为bean的属性设置对应的值和对其他bean的引用（调用类中的set方法）
+
    - 第三步：调用bean中初始化的方法（需要进行配置，`init`方法）
+
    - bean可以使用（对象获取到了）
+
    - 当容器关闭时候，调用bean销毁方法（需要进行配置销毁方法，手动调用）
+
+   - 单实例
+
+     单例：（容器启动）构造器 ---> 初始化方法 ---> （容器关闭）销毁方法
+
+     多例：获取bean（构造器 --> 初始化方法）--> 容器关闭不会调用bean的销毁方法
+
+   - 
 
 3. 示例bean的声明周期
 
@@ -639,7 +795,7 @@ Spring里面有两种类型的bean，一种普通bean，另外一种工厂bean�
    ```
    
    ```xml
-   <!-- 指定初始化方法和销毁方法-->
+   <!-- 指定初始化方法init-method 和销毁方法destroy-method -->
    <bean id="orders" class="com.atguigu.spring5.bean.Orders" init-method="initMethod" destroy-method="destoryMethod">
           <property name="oname" value="iphone"></property>
    </bean>
@@ -654,7 +810,7 @@ Spring里面有两种类型的bean，一种普通bean，另外一种工厂bean�
        System.out.println(orders);
        //手动 bean实例销毁
        //ApplicationContext 没有实现close方法 其子类有实现的接口所以进行类型的转换
-   	//context.close();
+   	//context.close();  必须调用close方法，才会调用destroy-method方法
        ((ClassPathXmlApplicationContext) context.close();
    }
    ```
@@ -702,11 +858,11 @@ Spring里面有两种类型的bean，一种普通bean，另外一种工厂bean�
 
 
 
-### 自动装配
+### XML中的自动装配
 
 1. 自动装配：
 
-   根据指定装配规则（属性名称或属性类型），Spring自动将匹配的属性值进行注入
+   根据指定装配规则（属性名称或属性类型），Spring自动将匹配的属性值进行注入（仅限于自定义类型的数据）   
 
 2. 演示自动装配过程
 
@@ -720,9 +876,7 @@ Spring里面有两种类型的bean，一种普通bean，另外一种工厂bean�
        private Dept dept;
    }
    ```
-```
-   
-   ```xml
+```xml
    <!--   实现自动装配
            bean标签属性autowire 配置自动装配
            autowire属性常用两个值：byName根据属性名注入 byType根据属性类型注入-->
@@ -742,6 +896,34 @@ Spring里面有两种类型的bean，一种普通bean，另外一种工厂bean�
    <!-- id的名称无限制，只与对象的类型相关-->
    <bean id="deptTwo" class="com.atguigu.spring5.autowire.Dept"></bean>
    ```
+
+### SpEL 表达式
+
+Spring Expression Language，Spring表达式语言
+
+1. 在SpEL中使用字面量
+
+   `<property name="salary" value="#{1234*12}"></property>`
+
+2. 引用其他bean
+
+   `<property name="car" value="#{car}"></property>`
+
+3. 引用其他bean的某个属性值
+
+   `<property name="lastName" value="#{book01.bookName}"></property>`
+
+4. 调用非静态方法 格式：`对象.方法名`
+
+   `<property name="gender" value="#{book01.getBookName()}></property>"`
+
+5. 调用静态方法 格式：`#{T(全类名).静态方法名(参数)}`
+
+   `<property name="email" value="#{T(java.util.UUID).randomUUID().toString()}></property>"`
+
+6. 调用运算符
+
+
 
 ### 外部属性文件
 
@@ -778,7 +960,7 @@ Spring里面有两种类型的bean，一种普通bean，另外一种工厂bean�
           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
    </beans>
    ```
-```
+```xml
    
 步骤三：在spring配置文件使用标签引入外部属性文件
    
@@ -803,9 +985,16 @@ Spring里面有两种类型的bean，一种普通bean，另外一种工厂bean�
 - 注解作用于：类、方法、属性
 - 注解的目的：简化XML配置
 
-**Spring针对Bean管理操作中的创建对象所提供的注解**：
+**Spring针对Bean管理操作中的创建对象所提供的注解**，四个注解功能是一样的，都可以用来创建bean实例：
 
-@Component、@Service、@Controller、@Repository。这上面四个注解功能是一样的，都可以用来创建bean实例
+- @Service：业务逻辑，推荐业务逻辑层的组件添加这个注解
+- @Controller：控制器，推荐给控制器层的组件添加这个注解
+- @Repository：给数据库（持久层，dao层）的组件添加这个注解
+- @Component：给不属于以上这几层的组件添加这个注解
+
+@Repository("xxx")  id默认是类名首字母小写，自定义类名为xxx
+
+@Scope(value="prototype")  默认是单实例，设置多实例
 
 ### 基于注解方式实现对象创建
 
@@ -851,7 +1040,7 @@ public void testService(){
 }
 ```
 
-### 开启组件扫描细节配置
+### 开启组件扫描细节配置  include-filter exclude-filter
 
 示例一：
 
@@ -871,10 +1060,13 @@ context:include-filter：设置扫描哪些内容
 ```xml
 <!--
 use-default-filter="false"：不使用默认filter 自己配置filter 
-context:exclude-filter：设置不扫描哪些内容 type="annotation" (annotation注解) expresssion="xxx.Controller" 不扫描controller注解修饰的类
+context:exclude-filter：设置不扫描哪些内容 
+	type="annotation" (annotation注解) expresssion="xxx.Controller" 不扫描controller注解修饰的类
+	type="assignalbe" 指定排除某个具体的类，按照类进行排除  expression=""，类的全类名
 -->
 <context:component-scan base-package="com.atguigu" use-default-filters="false">
     <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+    <context:exclude-filter type="assignable" expression="com.atguigu.bean.Book"/>
 </context:component-scan>
 ```
 
@@ -884,12 +1076,18 @@ context:exclude-filter：设置不扫描哪些内容 type="annotation" (annotati
 
 三种常用注解：
 
-1. @AutoWired：根据属性类型进行自动装配，注入
+1. @AutoWired：根据属性类型进行自动装配，注入 
 2. @Qualifier：根据属性名称进行注入，和@AutoWired一起进行使用
 3. @Resource：可以根据类型注入，也可以根据名称注入
 4. @Value：注入普通类型属性
 
+`@AutoWired`：Spring 框架自身的注解
+
+`@Resource`：J2EE Java标准下的注解，拓展性更强，如果切换成另外一个容器框架，`@Resource`仍然可以使用，`@AutoWired`不可以
+
 #### @AutoWired：根据属性类型进行自动装配，注入示例
+
+方法上有`@AutoWired`，方法会在`bean`创建的时候自动运行，在这个方法上的每一个参数都会自动注入值
 
 步骤一：把service和dao对象创建，在service和dao类添加对象注解
 
@@ -994,12 +1192,64 @@ private String nname;
    }
    ```
 
+### 依赖泛型注入
+
+![image-20201229155740485](images/image-20201229155740485.png)
+
+```java
+public class BaseService<T>{  //注意这里BaseService并没有注解表明其是组件
+    @Autowired
+    private BaseDao<T> baseDao;
+    
+    public void save(){
+        Sysytem.out.println("自动注入的dao："+baseDao);
+        baseDao.save();
+    }
+}
+```
+
+```java
+@Service
+public class BookService extends BaseService<Book>{}
+```
+
+```java
+@Service
+public class UserService extends BaseService<User>{}
+```
+
+```java
+public abstract class BaseDao<T>{
+    public abstract void save();
+}
+```
+
+```java
+@Repository
+public class BookDao extends BaseDao<Book>{
+    @Override
+    public void save(){
+        System.out.println("book basedao");
+    }
+}
+```
+
+```java
+@Repository
+public class UserDao extends BaseDao<User>{
+    @Override
+    public void save(){
+        System.out.println("user basedao");
+    }
+}
+```
+
 
 
 # AOP概念
 
-- AOP：面向切面编程，不改源代码进行功能增强。利用AOP可以对业务逻辑的各个部分进行隔离，从而使得业务逻辑各部分之间的耦合度降低，提高程序的可用性，提高开发效率。
-- 通俗描述：不通过修改源代码方式，在主干功能里面添加新功能
+- AOP（Aspect Oriented Programming） ：面向切面编程，不改源代码进行功能增强。利用AOP可以对业务逻辑的各个部分进行隔离，从而使得业务逻辑各部分之间的耦合度降低，提高程序的可用性，提高开发效率。
+- 通俗描述：不通过修改源代码方式，在主干功能里面添加新功能（将某段代码动态的切入到指定的方法的指定位置进行运行的编程方式）
 - 使用登录的例子进行说明
 
 ![image-20201031201601261](./images/image-20201031201601261.png)
@@ -1030,7 +1280,7 @@ private String nname;
 
 ### JDK动态代理简介
 
-**使用JDK动态代理，使用Proxy类里面的方法，创建代理对象**，调用newProxyInstance方法实现，三个参数：
+**使用JDK动态代理，使用Proxy类里面的方法，创建代理对象**，调用`newProxyInstance`方法实现，三个参数：
 
 - ClassLoader loader，类加载器，定义由哪个classloader对象生成的代理类进行加载
 - Class<?> interfaces，一个interface对象数组，表示我们将给代理对象提供一组什么样的接口，如果提供了这样一个接口对象数组，那么也就声明了代理类实现了这些接口，代理类就可以调用接口中声明的所有方法。
@@ -1100,6 +1350,9 @@ private String nname;
        }
    
        //增强的逻辑
+       //proxy：代理对象 
+       //method：当前将要执行的目标对象的方法
+       //args：方法调用时，外界传入的参数值 
        @Override
        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
            //增强方法之前
@@ -1140,6 +1393,13 @@ private String nname;
 
 **Spring框架中一般基于AspectJ实现AOP操作**
 
+适应场景：
+
+1. AOP做日志保存到数据库库
+2. AOP做权限验证
+3. AOP做安全检查
+4. AOP做事务控制
+
 ## AspectJ
 
 不是Spring组成部分，独立AOP框架，一般把AspectJ和Spring框架一起使用，进行AOP操作
@@ -1161,15 +1421,16 @@ private String nname;
 
 ### 语法结构
 
-```java
+```
 execution([权限修饰符][返回类型][类全路径][方法名称]([参数列表]))
+同时支持 && || ！表达式
 ```
 
 举例1：对`com.atguigu.dao.BookDao`类里面的add方法进行增强
 
 ```java
-//* 表示任意修饰符
-//..表示方法中的参数
+//* 表示任意修饰符，在路径中只表示匹配一层路径，..在路径中表达匹配多层路径
+//..表示匹配方法中的任意多个参数和多种类型
 execution(* com.atguigu.dao.BookDao.add(..))
 ```
 
@@ -1240,6 +1501,32 @@ public class UserProxy {
 
 `@Before @After @AfterReturning @AfterThrowing @Around`
 
+`@Around`环绕通知中有一个参数为`ProcedingJoinPoint`类，通过其`proceed()`方法执行切入点方法 
+
+环绕通知是优先于普通通知执行，执行顺序：
+
+（环绕前置 --- 普通前置） --- 目标方法执行 --- 环绕正常返回/出现异常 --- 环绕后置 --- 普通后置 --- 普通返回或者异常
+
+```
+普通前置
+{
+	try{
+		环绕前置
+		环绕执行：目标方法执行
+		环绕返回
+	}catch{
+		环绕出现异常
+	}finally{
+		环绕后置
+	}
+}
+
+普通后置
+普通方法返回/方法异常
+```
+
+
+
 ```java
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.*;
@@ -1278,17 +1565,20 @@ public class UserProxy {
 
     //在方法执行之前、之后都执行 环绕通知
     @Around(value = "execution(* com.atguigu.spring5.aopanno.User.add(..))")
-    public void around(ProceedingJoinPoint proceedingJoinPoint) throws Throwable {
+    public Object around(ProceedingJoinPoint proceedingJoinPoint) throws Throwable {
         System.out.println("环绕之前...");
 		
         //被增强方法执行
-        proceedingJoinPoint.proceed();
+        Object process=proceedingJoinPoint.proceed();
         System.out.println("环绕之后");
+        return process;
     }
 }
 ```
 
-### 相同的切入点抽取
+### 相同的切入点抽取 可重用
+
+<u>声明一个没有实现的返回void的空方法</u>
 
 使用`@Pointcut(value="execution([权限修饰符][返回类型][类全路径][方法名称]([参数列表]))")`
 
@@ -1330,6 +1620,45 @@ public class UserProxy {
 }
 ```
 
+### 获取目标方法的信息
+
+为通知方法的参数列表上写一个参数：`JoinPoint joinPoint`封装了当前目标方法的详细信息
+
+```java
+//最终通知
+//在方法执行之后执行 方法被调用的时候就会执行 不管调用之后方法有没出错
+@After(value = "execution(* com.atguigu.spring5.aopanno.User.add(..))")
+public void after(JoinPoint joinPoint){
+    //获取目标方法运行时使用的参数
+    Object[] args=joinPoint.getArgs();
+    //获取方法签名
+    Signature signature=joinPoint.getSignature();
+    //获取方法名
+    String name=signature.getName();
+    System.out.println("after...");
+}
+```
+
+### AfterThrowing AfterReturning 指定参数获取返回值
+
+告诉Spring 使用哪个参数接受返回值
+
+```java
+//在返回结果（值）之后执行
+@AfterReturning(value = "execution(* com.atguigu.spring5.aopanno.User.add(..))",returning="result")
+public void afterReturning(JoinPoint joinPoint,Object result){
+    System.out.println("afterReturning...");
+}
+
+//异常通知
+@AfterThrowing(value = "execution(* com.atguigu.spring5.aopanno.User.add(..))",throwing="result")
+public void afterThrowing(JoinPoint joinPoint,Object result){
+    System.out.println("afterThrowing...");
+}
+```
+
+
+
 ### 完全使用注解开发
 
 创建配置类，不需要配置XML配置文件
@@ -1342,7 +1671,7 @@ public class ConfigAop {
 }
 ```
 
-##  AOP操作（AspectJ配置文件）
+##  AOP操作（AspectJ配置文件 XML方式）
 
 ### 创建两个类，增强类和被增强类，创建方法
 
@@ -1387,7 +1716,11 @@ public class BookProxy {
 		有aop:before aop:after aop:after-returning aop:after-throwing aop:around
 		method:作用在哪个方法上，方法名
 		pointcut-ref:作用在哪一个切入点上 -->
+        
 		<aop:before method="before" pointcut-ref="p"></aop:before>
+         <!-- 二者效果相同 -->
+         <aop:before method="before" pointcut="execution(* com.atguigu.spring5.aopxml.Book.buy(..))"></aop:before> 
+        
 	</aop:aspect>
 </aop:config>
 ```
